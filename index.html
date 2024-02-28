@@ -34,13 +34,13 @@
       const referrer = document.referrer;
       
       console.log(referrer);
-      
-      let a = document.createElement('a');
-      a.href = referrer;
-      const fullReferrerUrl = a.href;
-      
-      // 完全なURLを出力
-      console.log('Referrer URL:', fullReferrerUrl);
+
+      if(referrer && referrer.includes("editor.note.com/") {
+        document.getElementById("userHtmlFrame").style.display = block;
+      }
+      else {
+        document.getElementById("userHtmlFrame").style.display = none;
+      }
       
     </script>
   </body>
