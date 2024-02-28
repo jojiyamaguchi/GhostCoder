@@ -32,7 +32,16 @@
     </div>
     <script>
       const referrer = document.referrer;
+      
       console.log(referrer);
+      
+      const a = document.createElement('a');
+      a.href = referrer;
+      const fullReferrerUrl = a.href;
+      
+      // 完全なURLを出力
+      console.log('Referrer URL:', fullReferrerUrl);
+      
     </script>
   </body>
 </html>
