@@ -32,7 +32,7 @@
     </div>
     <script>
       const referrer = document.referrer;
-      
+      localStorage.setItem('previousReferrer', referrer);
       console.log(referrer);
 
       if((referrer && referrer.indexOf('note.com') > -1) ) {
