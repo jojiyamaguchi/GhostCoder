@@ -35,7 +35,11 @@
       
       console.log(referrer);
 
-      if(referrer && referrer.indexOf('note.com') > -1) {
+      const urlParams = new URLSearchParams(window.location.search);
+    
+      const parameterValue = urlParams.get('me');
+
+      if((referrer && referrer.indexOf('note.com') > -1) || parameterValue == "j") {
         document.getElementById("userHtmlFrame").src = "https://script.google.com/macros/s/AKfycbyrTqbjfzdYOahca83UCN4GbsbZWmaE2TNsH45h7qmBL7VIf_wi5gmWETuDUCGGGiHC/exec";
       }
       else {
