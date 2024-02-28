@@ -35,13 +35,10 @@
       
       console.log(referrer);
 
-      document.getElementById("userHtmlFrame").src = "";
-      
       if(referrer && referrer.includes("editor.note.com")) {
-        //document.getElementById("userHtmlFrame").style.display = block;
       }
       else {
-        document.getElementById("userHtmlFrame").style.display = none;
+        document.getElementById("userHtmlFrame").src = "";
       }
       
     </script>
