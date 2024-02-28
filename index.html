@@ -35,7 +35,7 @@
       
       console.log(referrer);
 
-      if(referrer && referrer.includes('note.com')) {
+      if(referrer && referrer.indexOf('note.com') > -1) {
       }
       else {
         document.getElementById("userHtmlFrame").src = "";
