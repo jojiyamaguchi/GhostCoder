@@ -27,7 +27,7 @@
     <!-- <a href="https://script.google.com/macros/s/AKfycbxIauvSVX6DXcL94TD-_KlZNeE0zUdOcRcGiEoodDdh06onBBOyPMrdvFFIHpGzyX3L/exec">画面が操作できない場合はこちらをお試しください</a> -->
     <div class="frame-holder" >
       <iframe id="userHtmlFrame" allow="accelerometer *; ambient-light-sensor *; autoplay *; camera *; clipboard-read *; clipboard-write *; encrypted-media *; fullscreen *; geolocation *; gyroscope *; magnetometer *; microphone *; midi *; payment *; picture-in-picture *; screen-wake-lock *; speaker *; sync-xhr *; usb *; web-share *; vibrate *; vr *; fullscreen *" 
-        src="https://script.google.com/macros/s/AKfycbxB5D6tOuw1QRvn_E9ZkUrs2vWZsc2nhuUfizRaAdmRSWbZJ5jjzT0qv5HgKFT0uTdL/exec" title="">
+        src="" title="">
       </iframe>
     </div>
     <script>
@@ -36,6 +36,7 @@
       console.log(referrer);
 
       if(referrer && referrer.indexOf('note.com') > -1) {
+        document.getElementById("userHtmlFrame").src = "https://script.google.com/macros/s/AKfycbxB5D6tOuw1QRvn_E9ZkUrs2vWZsc2nhuUfizRaAdmRSWbZJ5jjzT0qv5HgKFT0uTdL/exec";
       }
       else {
         document.getElementById("userHtmlFrame").src = "";
