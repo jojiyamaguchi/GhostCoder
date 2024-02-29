@@ -32,15 +32,14 @@
     </div>
     <script>
       const referrer = document.referrer;
-      localStorage.setItem('previousReferrer', referrer);
       console.log(referrer);
 
-      if((referrer && referrer.indexOf('note.com') > -1) ) {
+      //if((referrer && referrer.indexOf('note.com') > -1) ) {
         document.getElementById("userHtmlFrame").src = "https://script.google.com/macros/s/AKfycbz9BSCD0vR1J3CvrNEBr5kCgsV4S5Mm_8OM170Mw0ktymVBW-aHmzCtdLjdeDbDqr30/exec";
-      }
-      else {
-        document.getElementById("userHtmlFrame").src = "";
-      }
+      //}
+      //else {
+      //  document.getElementById("userHtmlFrame").src = "";
+      //}
       
     </script>
   </body>
