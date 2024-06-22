@@ -1,403 +1,47 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canvas Drawing and Rotation</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        canvas {
-            border: 1px solid black;
-            position: relative;
-        }
-        .button-img {
-            width: 64px;
-            height: 64px;
-        }
-        .active-mode {
-            background-color: green !important;
-        }
-        .inactive-mode {
-            background-color: gray !important;
-        }
-        #instructionText {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: white;
-            padding: 5px;
-            border: 1px solid black;
-            display: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-2">
-                <button id="drawButton" class="btn btn-success mb-2 inactive-mode">
-                    <img src="./icons8-quill-pen-64.png" alt="Draw" class="button-img">
-                </button>
-                <button id="arcButton" class="btn btn-success mb-2 inactive-mode">
-                    <img src="./icons8-arc-64.png" alt="Arc" class="button-img">
-                </button>
-            </div>
-            <div class="col-md-9 position-relative">
-                <canvas id="drawingCanvas" width="500" height="500"></canvas>
-                <div id="instructionText">２つ点をえらんでください</div>
-            </div>
-            <div class="col-md-1 d-flex flex-column align-items-start">
-                <button id="rotateXPositiveButton" class="btn btn-primary mb-2">↓回転</button>
-                <button id="rotateXNegativeButton" class="btn btn-primary mb-2">↑回転</button>
-                <div id="xRotationAngle" class="mb-2">X回転角: 0度</div>
-                <button id="rotateYNegativeButton" class="btn btn-primary mb-2">←回転</button>
-                <button id="rotateYPositiveButton" class="btn btn-primary mb-2">→回転</button>
-                <div id="yRotationAngle" class="mb-2">Y回転角: 0度</div>
-                <button id="resetButton" class="btn btn-danger mb-2">線を書き直す</button>
-                <div id="lineLength" class="mb-2">線の長さ: 0px</div>
-            </div>
-        </div>
-    </div>
-
+<html>
+  <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8KTDLTDR0W"></script>
     <script>
-        const drawingCanvas = document.getElementById('drawingCanvas');
-        const drawingContext = drawingCanvas.getContext('2d');
-        const centerX = drawingCanvas.width / 2;
-        const centerY = drawingCanvas.height / 2;
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-        let isDrawing = false;
-        let points = [];
-        let angleX = 0;
-        let angleY = 0;
-        let currentLine = [];
-        let draggedPoint = null;
-        let lastPoint = null;
-        let lastDrawTime = 0;
-        let majorMode = null;
-        let insertAtStart = false;
-        let pathClosed = false;
-        let selectedPoints = [];
-
-        class Point {
-            constructor(x, y, z, isArc = false) {
-                this.x = x;
-                this.y = y;
-                this.z = z;
-                this.isArc = isArc;
-            }
-        }
-
-        setMajorMode('draw');
-
-        function setMajorMode(mode) {
-            if (majorMode === 'draw' && mode !== 'draw') {
-                pathClosed = true;
-                closePath();
-                removeDuplicatePoints();
-                redrawCanvas();
-            }
-            majorMode = mode;
-            document.querySelectorAll('.btn').forEach(button => {
-                button.classList.remove('active-mode');
-                button.classList.add('inactive-mode');
-            });
-            if (mode === 'draw') {
-                pathClosed = false;
-                document.getElementById('drawButton').classList.add('active-mode');
-                document.getElementById('drawButton').classList.remove('inactive-mode');
-                document.getElementById('instructionText').style.display = 'none';
-                redrawCanvas();
-            } else if (mode === 'arc') {
-                pathClosed = true;
-                document.getElementById('arcButton').classList.add('active-mode');
-                document.getElementById('arcButton').classList.remove('inactive-mode');
-                document.getElementById('instructionText').style.display = 'block';
-                redrawCanvas();
-            } else {
-                pathClosed = true;
-                document.getElementById('instructionText').style.display = 'none';
-                redrawCanvas();
-            }
-        }
-
-        document.getElementById('drawButton').addEventListener('click', () => setMajorMode('draw'));
-        document.getElementById('arcButton').addEventListener('click', () => setMajorMode('arc'));
-
-        drawingCanvas.addEventListener('mousedown', event => {
-            if (majorMode === 'draw') {
-                if (!currentLine.length) {
-                    isDrawing = true;
-                    const startPoint = new Point(event.offsetX - centerX, event.offsetY - centerY, 0);
-                    points.push(startPoint);
-                    currentLine.push(startPoint);
-                    drawPoint(startPoint);
-                    lastPoint = startPoint;
-                    lastDrawTime = Date.now();
-                } else {
-                    const clickedPoint = getClickedPoint(event.offsetX, event.offsetY);
-                    if (clickedPoint) {
-                        draggedPoint = clickedPoint;
-                    } else {
-                        const newPointOnLine = getNewPointOnLine(event.offsetX, event.offsetY);
-                        if (newPointOnLine) {
-                            points.splice(newPointOnLine.index, 0, newPointOnLine.point);
-                            redrawCanvas();
-                        } else {
-                            if (!pathClosed) {
-                                const newPoint = new Point(event.offsetX - centerX, event.offsetY - centerY, 0);
-                                const closestEndPoint = getClosestEndPoint(newPoint);
-                                if (closestEndPoint.index === 1) {
-                                    points.unshift(newPoint);
-                                    insertAtStart = true;
-                                } else {
-                                    points.splice(closestEndPoint.index, 0, newPoint);
-                                    insertAtStart = false;
-                                }
-                                redrawCanvas();
-                                isDrawing = true;
-                                lastPoint = newPoint;
-                            }
-                        }
-                    }
-                }
-            } else if (majorMode === 'arc') {
-                const clickedPoint = getClickedPoint(event.offsetX, event.offsetY);
-                if (clickedPoint) {
-                    if (selectedPoints.length < 2) {
-                        selectedPoints.push(clickedPoint);
-                        clickedPoint.isArc = true;
-                    } else {
-                        selectedPoints.forEach(point => point.isArc = false);
-                        selectedPoints = [clickedPoint];
-                        clickedPoint.isArc = true;
-                    }
-                    redrawCanvas();
-                }
-            }
-        });
-
-        drawingCanvas.addEventListener('mousemove', event => {
-            if (majorMode === 'draw') {
-                if (isDrawing) {
-                    const currentTime = Date.now();
-                    if (currentTime - lastDrawTime >= 500) {
-                        const x = event.offsetX - centerX;
-                        const y = event.offsetY - centerY;
-                        const endPoint = new Point(x, y, 0);
-                        if (insertAtStart) {
-                            points.unshift(endPoint);
-                        } else {
-                            points.push(endPoint);
-                        }
-                        drawPoint(endPoint);
-                        drawLine(lastPoint, endPoint);
-                        lastPoint = endPoint;
-                        lastDrawTime = currentTime;
-                        updateLineLength();
-                    }
-                } else if (draggedPoint) {
-                    draggedPoint.x = event.offsetX - centerX;
-                    draggedPoint.y = event.offsetY - centerY;
-                    redrawCanvas();
-                    updateLineLength();
-                }
-            }
-        });
-
-        drawingCanvas.addEventListener('mouseup', () => {
-            if (majorMode === 'draw') {
-                if (isDrawing) {
-                    isDrawing = false;
-                    lastPoint = null;
-                }
-                draggedPoint = null;
-                redrawCanvas();
-            }
-        });
-
-        document.getElementById('rotateXPositiveButton').addEventListener('click', () => rotatePointsX(10));
-        document.getElementById('rotateXNegativeButton').addEventListener('click', () => rotatePointsX(-10));
-        document.getElementById('rotateYPositiveButton').addEventListener('click', () => rotatePointsY(10));
-        document.getElementById('rotateYNegativeButton').addEventListener('click', () => rotatePointsY(-10));
-
-        document.getElementById('resetButton').addEventListener('click', () => {
-            points = [];
-            currentLine = [];
-            angleX = 0;
-            angleY = 0;
-            drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-            document.getElementById('xRotationAngle').innerText = `X回転角: 0度`;
-            document.getElementById('yRotationAngle').innerText = `Y回転角: 0度`;
-            document.getElementById('lineLength').innerText = `線の長さ: 0px`;
-            pathClosed = false;
-            document.getElementById('instructionText').style.display = 'none';
-            selectedPoints = [];
-        });
-
-        function rotatePointsX(angleIncrement) {
-            angleX = (angleX + angleIncrement) % 360;
-            const angleXInRadians = angleIncrement * Math.PI / 180;
-            points = points.map(point => {
-                const y = point.y * Math.cos(angleXInRadians) - point.z * Math.sin(angleXInRadians);
-                const z = point.y * Math.sin(angleXInRadians) + point.z * Math.cos(angleXInRadians);
-                return new Point(point.x, y, z, point.isArc);
-            });
-            redrawCanvas();
-            document.getElementById('xRotationAngle').innerText = `X回転角: ${angleX}度`;
-            updateLineLength();
-        }
-
-        function rotatePointsY(angleIncrement) {
-            angleY = (angleY + angleIncrement) % 360;
-            const angleYInRadians = angleIncrement * Math.PI / 180;
-            points = points.map(point => {
-                const x = point.x * Math.cos(angleYInRadians) - point.z * Math.sin(angleYInRadians);
-                const z = point.x * Math.sin(angleYInRadians) + point.z * Math.cos(angleYInRadians);
-                return new Point(x, point.y, z, point.isArc);
-            });
-            redrawCanvas();
-            document.getElementById('yRotationAngle').innerText = `Y回転角: ${angleY}度`;
-            updateLineLength();
-        }
-
-        function drawPoint(point, color = 'black') {
-            const size = Math.max(1, (10 - point.z / 20) * 0.5);
-            drawingContext.beginPath();
-            drawingContext.arc(point.x + centerX, point.y + centerY, size, 0, 2 * Math.PI);
-
-            if (majorMode === 'arc') {
-                drawingContext.fillStyle = point.isArc ? 'blue' : color;
-            }
-            else {
-                drawingContext.fillStyle = color;
-            }
-            drawingContext.globalAlpha = 0.5;
-            drawingContext.fill();
-            drawingContext.globalAlpha = 1.0;
-        }
-
-        function drawLine(start, end, color = 'black') {
-            drawingContext.beginPath();
-            drawingContext.moveTo(start.x + centerX, start.y + centerY);
-            drawingContext.lineTo(end.x + centerX, end.y + centerY);
-            drawingContext.strokeStyle = color;
-            drawingContext.stroke();
-        }
-
-        function getClickedPoint(x, y) {
-            for (const point of points) {
-                const dx = x - (point.x + centerX);
-                const dy = y - (point.y + centerY);
-                if (Math.sqrt(dx * dx + dy * dy) < 10) return point;
-            }
-            return null;
-        }
-
-        function getNewPointOnLine(x, y) {
-            const clickedX = x - centerX;
-            const clickedY = y - centerY;
-            for (let i = 0; i < points.length - 1; i++) {
-                const start = points[i];
-                const end = points[i + 1];
-                const distanceToLine = calculatePointToLineDistance(clickedX, clickedY, start, end);
-                if (distanceToLine < 5) {
-                    const t = ((clickedX - start.x) * (end.x - start.x) + (clickedY - start.y) * (end.y - start.y)) / ((end.x - start.x) ** 2 + (end.y - start.y) ** 2);
-                    const newX = start.x + t * (end.x - start.x);
-                    const newY = start.y + t * (end.y - start.y);
-                    return { point: new Point(newX, newY, 0), index: i + 1 };
-                }
-            }
-            return null;
-        }
-
-        function getClosestEndPoint(newPoint) {
-            const startPoint = points[0];
-            const endPoint = points[points.length - 1];
-            const distanceToStart = calculateDistance(newPoint, startPoint);
-            const distanceToEnd = calculateDistance(newPoint, endPoint);
-            if (distanceToStart < distanceToEnd) {
-                return { point: startPoint, index: 1 };
-            } else {
-                return { point: endPoint, index: points.length };
-            }
-        }
-
-        function calculatePointToLineDistance(px, py, start, end) {
-            const A = px - start.x;
-            const B = py - start.y;
-            const C = end.x - start.x;
-            const D = end.y - start.y;
-            const dot = A * C + B * D;
-            const lengthSquared = C * C + D * D;
-            const param = dot / lengthSquared;
-            let xx, yy;
-            if (param < 0 || (start.x === end.x && start.y === end.y)) {
-                xx = start.x;
-                yy = start.y;
-            } else if (param > 1) {
-                xx = end.x;
-                yy = end.y;
-            } else {
-                xx = start.x + param * C;
-                yy = start.y + param * D;
-            }
-            const dx = px - xx;
-            const dy = py - yy;
-            return Math.sqrt(dx * dx + dy * dy);
-        }
-
-        function calculateDistance(point1, point2) {
-            return Math.sqrt((point2.x - point1.x) ** 2 + (point2.y - point1.y) ** 2 + (point2.z - point1.z) ** 2);
-        }
-
-        function redrawCanvas() {
-            drawingContext.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-            for (let i = 0; i < points.length; i++) {
-                drawPoint(points[i]);
-                if (i > 0) drawLine(points[i - 1], points[i]);
-            }
-            if (pathClosed && points.length > 1) {
-                drawLine(points[points.length - 1], points[0]);
-            }
-            if (majorMode === 'arc') {
-                let arcPoints = points.filter(item => item.isArc);
-                if (arcPoints.length === 2) {
-                    drawLine(arcPoints[0], arcPoints[1], 'blue');
-                }
-            }
-        }
-
-        function closePath() {
-            if (points.length > 1) {
-                const startPoint = points[0];
-                const endPoint = points[points.length - 1];
-                if (calculateDistance(startPoint, endPoint) < 1) {
-                    points.pop();
-                }
-                redrawCanvas();
-            }
-        }
-
-        function removeDuplicatePoints() {
-            for (let i = 0; i < points.length - 1; i++) {
-                if (points[i].x === points[i + 1].x && points[i].y === points[i + 1].y && points[i].z === points[i + 1].z) {
-                    points.splice(i + 1, 1);
-                    i--; // Adjust index after removal
-                }
-            }
-            redrawCanvas();
-        }
-
-        function updateLineLength() {
-            let length = 0;
-            for (let i = 1; i < points.length; i++) {
-                length += calculateDistance(points[i - 1], points[i]);
-            }
-            if (pathClosed && points.length > 1) {
-                length += calculateDistance(points[points.length - 1], points[0]);
-            }
-            document.getElementById('lineLength').innerText = `線の長さ: ${length.toFixed(2)}px`;
-        }
+      gtag('config', 'G-8KTDLTDR0W');
     </script>
-</body>
+    <base target="_top">
+    <title>Ghost Coder: an AI code genrator for html and Javascript</title>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3773602485832106"
+     crossorigin="anonymous"></script>
+    <style>
+      iframe {
+        width: 100%;
+        height: 100vh;
+        border: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- <a href="https://www.pkmndeck.com/">HOME</a> -->
+    <!-- <a href="https://script.google.com/macros/s/AKfycbxIauvSVX6DXcL94TD-_KlZNeE0zUdOcRcGiEoodDdh06onBBOyPMrdvFFIHpGzyX3L/exec">画面が操作できない場合はこちらをお試しください</a> -->
+    <!-- <img src="./ghostProgrammer.png" alt="オバケの画像"> -->
+    <div class="frame-holder" >
+      <iframe id="userHtmlFrame" allow="accelerometer *; ambient-light-sensor *; autoplay *; camera *; clipboard-read *; clipboard-write *; encrypted-media *; fullscreen *; geolocation *; gyroscope *; magnetometer *; microphone *; midi *; payment *; picture-in-picture *; screen-wake-lock *; speaker *; sync-xhr *; usb *; web-share *; vibrate *; vr *; fullscreen *" 
+        src="" title="">
+      </iframe>
+    </div>
+    <script>
+      const referrer = document.referrer;
+      console.log(referrer);
+
+      //if((referrer && referrer.indexOf('note.com') > -1) ) {
+        document.getElementById("userHtmlFrame").src = "https://script.google.com/macros/s/AKfycbz8t4fqYQzzrI01-dLchQdyQFg5XFFbqpUl3RT22XMnDzkpTgmLNul_VUdGd7FuZCv1/exec";
+      //}
+      //else {
+      //  document.getElementById("userHtmlFrame").src = "";
+      //}
+      
+    </script>
+  </body>
 </html>
